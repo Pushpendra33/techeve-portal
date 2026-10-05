@@ -1,0 +1,229 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@source "../app";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * TechEve design system — luxury dark, futuristic.
+ * Base #0D1117 / secondary #120A0D / cyan #00BCF3 / blue #356CB6.
+ * All colors are oklch tokens; never hardcode colors in components.
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+
+  --font-display: "Orbitron", "Rajdhani", sans-serif;
+  --font-heading: "Rajdhani", "Montserrat", sans-serif;
+  --font-sans: "Inter", system-ui, sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --animate-marquee: marquee 38s linear infinite;
+  --animate-float-slow: float-slow 14s ease-in-out infinite;
+  --animate-float-slower: float-slow 22s ease-in-out infinite;
+  --animate-drift: drift 18s ease-in-out infinite;
+  --animate-pulse-glow: pulse-glow 6s ease-in-out infinite;
+  --animate-spin-slow: spin 26s linear infinite;
+}
+
+:root {
+  --radius: 1rem;
+
+  --background: oklch(0.176 0.014 258);
+  --foreground: oklch(1 0 0);
+  --surface: oklch(0.21 0.016 258);
+  --surface-2: oklch(0.155 0.012 20);
+
+  --card: oklch(0.213 0.016 258);
+  --card-foreground: oklch(1 0 0);
+  --popover: oklch(0.196 0.015 258);
+  --popover-foreground: oklch(1 0 0);
+
+  --primary: oklch(0.742 0.144 218);
+  --primary-foreground: oklch(0.16 0.014 258);
+  --secondary: oklch(0.524 0.114 258);
+  --secondary-foreground: oklch(1 0 0);
+
+  --muted: oklch(0.25 0.016 258);
+  --muted-foreground: oklch(0.802 0.017 250);
+  --accent: oklch(0.28 0.03 230);
+  --accent-foreground: oklch(1 0 0);
+  --destructive: oklch(0.62 0.21 22);
+  --destructive-foreground: oklch(1 0 0);
+
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.742 0.144 218 / 55%);
+
+  --sidebar: oklch(0.196 0.015 258);
+  --sidebar-foreground: oklch(1 0 0);
+  --sidebar-primary: oklch(0.742 0.144 218);
+  --sidebar-primary-foreground: oklch(0.16 0.014 258);
+  --sidebar-accent: oklch(0.25 0.016 258);
+  --sidebar-accent-foreground: oklch(1 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.742 0.144 218 / 55%);
+
+  --gradient-brand: linear-gradient(
+    120deg,
+    oklch(0.742 0.144 218),
+    oklch(0.524 0.114 258)
+  );
+  --gradient-glass: linear-gradient(
+    140deg,
+    oklch(1 0 0 / 8%),
+    oklch(1 0 0 / 2%)
+  );
+  --shadow-glow: 0 0 0 1px oklch(0.742 0.144 218 / 18%),
+    0 24px 70px -30px oklch(0.742 0.144 218 / 55%);
+  --shadow-lift: 0 30px 80px -40px oklch(0 0 0 / 90%);
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(0, -28px, 0) rotate(8deg);
+  }
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translate3d(40px, -30px, 0) scale(1.12);
+    opacity: 0.85;
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@utility glass {
+  background-image: var(--gradient-glass);
+  background-color: oklch(1 0 0 / 3%);
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(18px) saturate(130%);
+}
+
+@utility text-gradient {
+  background-image: var(--gradient-brand);
+  background-clip: text;
+  color: transparent;
+}
+
+@utility bg-brand-gradient {
+  background-image: var(--gradient-brand);
+}
+
+@utility glow-ring {
+  box-shadow: var(--shadow-glow);
+}
+
+@utility lift {
+  transition:
+    transform 0.45s cubic-bezier(0.2, 0.7, 0.2, 1),
+    box-shadow 0.45s cubic-bezier(0.2, 0.7, 0.2, 1),
+    border-color 0.45s ease;
+  &:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-glow), var(--shadow-lift);
+    border-color: oklch(0.742 0.144 218 / 40%);
+  }
+}
+
+@utility hairline {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    oklch(0.742 0.144 218 / 45%),
+    transparent
+  );
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 6rem;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: oklch(0.742 0.144 218 / 35%);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.01em;
+  }
+}
