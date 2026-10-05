@@ -1,29 +1,35 @@
-# dependencies
+# Dependencies
 /node_modules
+/.pnp
+.pnp.js
 
-# next.js
+# Next.js Build Output
 /.next/
 /out/
-
-# production
 /build
+/dist
 
-# misc
+# Production & TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Operating System & Misc
 .DS_Store
 *.pem
+Thumbs.db
 
-# debug
+# Debug Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
-# local env files
-.env*.local
+# Local Environment Variables (NEVER commit secrets)
 .env
+.env*.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# vercel
+# Vercel
 .vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
