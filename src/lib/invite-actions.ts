@@ -7,8 +7,13 @@ import { requireSuperAdmin, requirePermission } from "@/lib/queries";
 import { PERMISSION_KEYS } from "@/lib/permissions";
 
 // The invite email's "Confirmation URL" template in the Supabase dashboard
-// must point here — see the setup guide for the exact template to paste in.
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+// points here. If NEXT_PUBLIC_SITE_URL is not explicitly set, default to production domain.
+const rawSiteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL}`
+    : "https://portal.techeve.in");
+const SITE_URL = rawSiteUrl.replace(/\/+$/, "");
 
 export type InviteState = { error: string | null; message: string | null };
 
