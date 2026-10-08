@@ -1,18 +1,28 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import nodemailer from "nodemailer";
 
-// Send announcement emails using Resend REST API
+// Send announcement emails using Google Workspace SMTP or Resend
 export async function sendAnnouncementNotifications(announcementId: string) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const fromEmail = process.env.RESEND_FROM_EMAIL ?? "TechEve <no-reply@techeve.in>";
-  
-  if (!apiKey) {
-    console.warn("⚠️ [Notifications] RESEND_API_KEY is not set. Email notifications will be skipped.");
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+  const resendApiKey = process.env.RESEND_API_KEY;
+
+  if (!smtpUser && !resendApiKey) {
+    console.warn(
+      "⚠️ [Notifications] Neither SMTP (SMTP_USER/SMTP_PASS) nor RESEND_API_KEY is configured. Skipping email dispatch."
+    );
     return;
   }
 
-  const supabase = await createClient();
+  const fromEmail =
+    process.env.SMTP_FROM ||
+    process.env.RESEND_FROM_EMAIL ||
+    `TechEve Academy <${smtpUser || "pushpendra@techeve.in"}>`;
+
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://portal.techeve.in").replace(/\/+$/, "");
+  const supabase = createAdminClient();
 
   // 1. Fetch announcement details
   const { data: announcement, error: annError } = await supabase
@@ -56,8 +66,8 @@ export async function sendAnnouncementNotifications(announcementId: string) {
 
   // Consolidate email list (prevent duplicates)
   const recipientEmails = new Set<string>();
-  if (students) students.forEach((s: any) => recipientEmails.add(s.email));
-  if (subscribers) subscribers.forEach((s: any) => recipientEmails.add(s.email));
+  if (students) students.forEach((s: any) => s.email && recipientEmails.add(s.email.toLowerCase().trim()));
+  if (subscribers) subscribers.forEach((s: any) => s.email && recipientEmails.add(s.email.toLowerCase().trim()));
 
   const list = Array.from(recipientEmails);
   if (list.length === 0) {
@@ -65,83 +75,152 @@ export async function sendAnnouncementNotifications(announcementId: string) {
     return;
   }
 
-  console.log(`✉️ [Notifications] Sending emails to ${list.length} recipients...`);
+  console.log(`✉️ [Notifications] Sending emails to ${list.length} recipients for "${announcement.title}"...`);
 
   // Construct email HTML
-  const eventDateStr = announcement.event_date 
+  const eventDateStr = announcement.event_date
     ? new Date(announcement.event_date).toLocaleDateString("en-US", {
         weekday: "long",
         year: "numeric",
         month: "long",
         day: "numeric",
         hour: "2-digit",
-        minute: "2-digit"
+        minute: "2-digit",
       })
     : "";
 
+  const typeLabel =
+    announcement.type === "workshop"
+      ? "Workshop / Masterclass"
+      : announcement.type === "opportunity"
+      ? "Hiring / Hackathon Opportunity"
+      : "Announcement & Event";
+
   const htmlBody = `
-    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded-radius: 12px;">
-      <h2 style="color: #0d9488;">New Announcement at TechEve</h2>
-      <hr style="border: 0; border-top: 1px solid #e2e8f0; margin-bottom: 20px;" />
-      
-      ${announcement.cover_image_url ? `<img src="${announcement.cover_image_url}" alt="Event Cover" style="width: 100%; max-height: 250px; object-fit: cover; border-radius: 8px; margin-bottom: 20px;" />` : ""}
-      
-      <h3 style="color: #1e293b; margin-top: 0;">${announcement.title}</h3>
-      
-      ${announcement.location ? `<p>📍 <strong>Location:</strong> ${announcement.location}</p>` : ""}
-      ${eventDateStr ? `<p>📅 <strong>Date & Time:</strong> ${eventDateStr}</p>` : ""}
-      
-      <p style="color: #475569; line-height: 1.6;">${announcement.body || ""}</p>
-      
-      ${announcement.link ? `
-        <div style="margin: 25px 0;">
-          <a href="${announcement.link}" style="background-color: #0d9488; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-            View Event Details
-          </a>
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; background-color: #0f172a; color: #f8fafc; border: 1px solid #1e293b; border-radius: 16px;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #14b8a6; background-color: rgba(20, 184, 166, 0.15); padding: 4px 12px; border-radius: 9999px;">
+          ${typeLabel}
+        </span>
+        <h1 style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 16px 0 8px 0; line-height: 1.3;">
+          ${announcement.title}
+        </h1>
+      </div>
+
+      ${
+        announcement.cover_image_url
+          ? `
+        <div style="margin-bottom: 20px; border-radius: 12px; overflow: hidden; border: 1px solid #334155;">
+          <img src="${announcement.cover_image_url}" alt="Event Cover" style="width: 100%; max-height: 240px; object-fit: cover; display: block;" />
         </div>
-      ` : ""}
-      
-      <hr style="border: 0; border-top: 1px solid #e2e8f0; margin-top: 30px;" />
-      <p style="font-size: 11px; color: #94a3b8; text-align: center;">
-        You received this because you are an active student at TechEve Academy or subscribed to our marketing updates.<br />
-        <a href="${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/unsubscribe?email=${encodeURIComponent("recipient_placeholder")}" style="color: #0d9488;">Unsubscribe</a>
+      `
+          : ""
+      }
+
+      <div style="background-color: #1e293b; border-radius: 12px; padding: 18px; margin-bottom: 20px; border: 1px solid #334155;">
+        ${
+          eventDateStr
+            ? `
+          <p style="margin: 0 0 10px 0; font-size: 14px; color: #cbd5e1;">
+            📅 <strong style="color: #ffffff;">Date & Time:</strong> ${eventDateStr}
+          </p>
+        `
+            : ""
+        }
+        ${
+          announcement.location
+            ? `
+          <p style="margin: 0 0 10px 0; font-size: 14px; color: #cbd5e1;">
+            📍 <strong style="color: #ffffff;">Location:</strong> ${announcement.location}
+          </p>
+        `
+            : ""
+        }
+        ${
+          announcement.capacity
+            ? `
+          <p style="margin: 0; font-size: 14px; color: #cbd5e1;">
+            👥 <strong style="color: #ffffff;">Seats:</strong> Limited to ${announcement.capacity} participants
+          </p>
+        `
+            : ""
+        }
+      </div>
+
+      <div style="font-size: 14px; line-height: 1.6; color: #cbd5e1; margin-bottom: 24px; white-space: pre-line;">
+        ${announcement.body || ""}
+      </div>
+
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${announcement.link || `${siteUrl}/dashboard/announcements`}" style="display: inline-block; background-color: #0d9488; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 14px; box-shadow: 0 4px 14px rgba(13, 148, 136, 0.4);">
+          ${announcement.link ? "View Event / Register Now" : "Open Student Portal"}
+        </a>
+      </div>
+
+      <hr style="border: 0; border-top: 1px solid #1e293b; margin: 32px 0 20px 0;" />
+      <p style="font-size: 11px; color: #64748b; text-align: center; margin: 0; line-height: 1.5;">
+        TechEve Academy &bull; Empowering the Next Generation of Tech Leaders<br />
+        Sent via ${smtpUser || "academy updates"} to enrolled students & academy members.
       </p>
     </div>
   `;
 
-  // Send batch or individual emails (using Resend's batch endpoint is recommended if API allows, or loop)
-  // Let's implement batch sending if supported, or single loops. 
-  // Resend API allows sending up to 100 emails in batch or to block lists.
-  // To avoid timeout issues in server action, we run this asynchronously and handle it.
   try {
-    for (const email of list) {
-      const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "Content-Type": "application/json"
+    if (smtpUser && smtpPass) {
+      // 1. Send via Google Workspace / Gmail SMTP
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || "smtp.gmail.com",
+        port: Number(process.env.SMTP_PORT || 465),
+        secure: process.env.SMTP_SECURE ? process.env.SMTP_SECURE === "true" : true,
+        auth: {
+          user: smtpUser,
+          pass: smtpPass,
         },
-        body: JSON.stringify({
-          from: fromEmail,
-          to: email,
-          subject: `TechEve New Event: ${announcement.title}`,
-          html: htmlBody.replace("recipient_placeholder", email)
-        })
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`❌ [Notifications] Failed to send email to ${email}`, errorText);
+      for (const email of list) {
+        try {
+          await transporter.sendMail({
+            from: fromEmail,
+            to: email,
+            subject: `TechEve Update: ${announcement.title}`,
+            html: htmlBody,
+          });
+        } catch (mailErr) {
+          console.error(`❌ [SMTP] Failed to send email to ${email}:`, mailErr);
+        }
+      }
+    } else if (resendApiKey) {
+      // 2. Fallback to Resend API
+      for (const email of list) {
+        const response = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${resendApiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: fromEmail,
+            to: email,
+            subject: `TechEve Update: ${announcement.title}`,
+            html: htmlBody,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`❌ [Resend] Failed to send email to ${email}:`, errorText);
+        }
       }
     }
 
-    // Update notified_at stamp in DB
+    // Update notified_at stamp in DB so it doesn't resend
     await supabase
       .from("announcements")
       .update({ notified_at: new Date().toISOString() })
       .eq("id", announcementId);
 
-    console.log("✅ [Notifications] Successfully notified everyone.");
+    console.log(`✅ [Notifications] Successfully sent notifications to ${list.length} recipients.`);
   } catch (err) {
     console.error("❌ [Notifications] Error sending notifications: ", err);
   }
